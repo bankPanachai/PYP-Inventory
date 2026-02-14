@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,111 +9,114 @@
   <style>
     body { background-color: #f4f7f9; font-family: 'Sarabun', sans-serif; padding: 15px; }
     .container { max-width: 500px; margin: auto; }
-    .card-main { background: white; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); padding: 25px; border: none; }
+    .card-main { background: white; border-radius: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.06); padding: 25px; border: none; }
     .item-card { border: 1.5px solid #edf2f7; border-radius: 18px; padding: 16px; margin-bottom: 12px; background: #fff; }
     .item-card.selected { border-color: #3182ce; background-color: #f0f7ff; }
     .item-card.error { border: 2.5px solid #e53e3e !important; background-color: #fff5f5; }
+    .staff-row { border: 1px solid #e2e8f0; border-radius: 14px; padding: 15px; margin-bottom: 10px; cursor: pointer; background: white; transition: 0.2s; }
+    .staff-row:hover { background-color: #f8fafc; }
     .hidden { display: none; }
-    .disabled-input { opacity: 0.4; pointer-events: none; }
-    .role-btn { border: 2px solid #e2e8f0; border-radius: 12px; padding: 15px; text-align: center; cursor: pointer; font-weight: 600; background: #fff; }
+    .disabled-input { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
+    .role-btn { border: 2px solid #e2e8f0; border-radius: 12px; padding: 15px; text-align: center; cursor: pointer; font-weight: 600; background: white; }
     .role-btn.active { border-color: #3182ce; background-color: #3182ce; color: white; }
+    .summary-item { background: #fff; border-left: 4px solid #3182ce; padding: 12px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <div class="card-main shadow-sm" id="app">
+  <div class="card-main">
     <div id="step1">
       <h5 class="fw-bold mb-4 text-center">ค้นหารายชื่อลูกเรือ</h5>
-      <div class="input-group mb-4">
-        <input type="text" id="searchInput" class="form-control p-3" placeholder="ชื่อ หรือ IPN...">
-        <button class="btn btn-primary" onclick="searchCrew()">ค้นหา</button>
+      <div class="input-group mb-4 shadow-sm">
+        <input type="text" id="searchInput" class="form-control p-3 border-0" placeholder="ชื่อ หรือ IPN...">
+        <button class="btn btn-primary px-4" onclick="searchCrew()">ค้นหา</button>
       </div>
       <div id="staffList"></div>
     </div>
 
     <div id="stepConfirmName" class="hidden">
-      <h5 class="fw-bold text-center mb-4">ระบุตำแหน่ง</h5>
+      <h5 class="fw-bold text-center mb-4">ระบุตำแหน่งงาน</h5>
       <div class="p-3 rounded-4 text-center mb-4 bg-light">
         <div class="fs-5 fw-bold text-primary" id="confirmingName"></div>
         <small class="text-muted">IPN: <span id="confirmingIpn"></span></small>
       </div>
-      <select class="form-select form-select-lg mb-4" id="rankSelector" onchange="checkSpecialRank()">
-        <option value="">-- เลือกตำแหน่ง --</option>
-      </select>
+      <div class="mb-4">
+        <label class="small fw-bold text-muted">ตำแหน่งหลัก</label>
+        <select class="form-select form-select-lg" id="rankSelector" onchange="checkSpecialRank()"><option value="">-- เลือกตำแหน่ง --</option></select>
+      </div>
       <div id="specialRoleArea" class="hidden mb-4">
         <div class="row g-2">
           <div class="col-6"><div class="role-btn" id="roleBtnNormal" onclick="selectRole('normal')"></div></div>
           <div class="col-6"><div class="role-btn" id="roleBtnMSM" onclick="selectRole('MSM')">Duty MSM</div></div>
         </div>
       </div>
-      <button class="btn btn-primary w-100 p-3" onclick="proceedToItems()">ถัดไป</button>
+      <button class="btn btn-primary w-100 p-3 shadow fw-bold" onclick="proceedToItems()">ถัดไป</button>
     </div>
 
     <div id="step2" class="hidden">
       <h5 class="fw-bold mb-4 text-primary">รายการเบิกของ</h5>
       <div id="itemList"></div>
-      <button class="btn btn-primary w-100 p-3 mt-4" onclick="goToSummary()">สรุปรายการ</button>
+      <button class="btn btn-primary w-100 p-3 mt-4 fw-bold" onclick="goToSummary()">ตรวจสอบสรุปรายการ</button>
     </div>
 
     <div id="step3" class="hidden">
-      <h5 class="fw-bold mb-4 text-center">ยืนยันรายการ</h5>
+      <h5 class="fw-bold mb-4 text-center">สรุปรายการ</h5>
       <div id="summaryContent" class="mb-4"></div>
-      <button id="btnConfirm" class="btn btn-success w-100 p-3" onclick="confirmSubmit()">ยืนยันบันทึกข้อมูล</button>
+      <button id="btnConfirm" class="btn btn-success w-100 p-3 fw-bold shadow" onclick="confirmSubmit()">ยืนยันบันทึกข้อมูล</button>
+      <button class="btn btn-link w-100 text-muted mt-2" onclick="switchStep('step2')">กลับไปแก้ไข</button>
     </div>
 
     <div id="stepSuccess" class="hidden text-center py-5">
-      <div class="display-1 text-success">✔</div>
-      <h4>บันทึกเรียบร้อย</h4>
-      <button class="btn btn-primary mt-3" onclick="location.reload()">กลับหน้าแรก</button>
+      <div class="display-1 text-success mb-3">✔</div>
+      <h4 class="fw-bold">บันทึกเรียบร้อย</h4>
+      <button class="btn btn-primary px-5 mt-4" onclick="location.reload()">กลับหน้าแรก</button>
     </div>
   </div>
 </div>
 
 <script>
-  // วาง URL ของ Google Apps Script ที่ได้จาก Deployment ที่นี่
-  const API_URL = 'วาล_WEB_APP_URL_ที่นี่';
-  
+  // เปลี่ยน URL นี้เป็น Web App URL ของคุณ
+  const API_URL = "https://script.google.com/macros/s/AKfycbwdMBz4lHAHmvRpxEcgQgk46Hm-_nk3kw8QLNIJmLRzC2GhAnhWJH4Vscz48yZoUqBD7Q/exec"; 
+
   let crew = {};
   let selectedDuty = "";
   const shoeMap = { "4": "38", "5": "39", "6": "40", "7": "41", "8": "42", "9": "43", "10": "44", "11": "45", "12": "46" };
 
-  async function callAPI(params, body = null) {
+  async function apiFetch(params) {
     const url = new URL(API_URL);
     Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
-    
-    const options = { method: body ? 'POST' : 'GET' };
-    if (body) options.body = JSON.stringify(body);
-    
-    const response = await fetch(url);
-    return await response.json();
-  }
-
-  window.onload = async () => {
-    const ranks = await callAPI({action: 'getRanks'});
-    const sel = document.getElementById('rankSelector');
-    ranks.forEach(r => {
-      let opt = document.createElement('option');
-      opt.value = r; opt.innerText = r;
-      sel.appendChild(opt);
-    });
-  };
-
-  async function searchStaffList(query) {
-    // แก้ไขปัญหา CORS เบื้องต้นด้วยการส่งแบบ GET พารามิเตอร์ หรือใช้ Proxy ถ้าจำเป็น
-    // สำหรับ Google Script 'Anyone' ปกติจะ Fetch ได้โดยตรง
-    const res = await fetch(`${API_URL}?action=searchStaff&query=${query}`);
+    const res = await fetch(url);
     return await res.json();
   }
 
+  window.onload = async function() {
+    try {
+      const ranks = await apiFetch({action: 'getRanks'});
+      const sel = document.getElementById('rankSelector');
+      ranks.forEach(r => {
+        let opt = document.createElement('option');
+        opt.value = r; opt.innerText = r;
+        sel.appendChild(opt);
+      });
+    } catch(e) { console.error("Error loading ranks"); }
+  };
+
   async function searchCrew() {
     const q = document.getElementById('searchInput').value;
-    const res = await searchStaffList(q);
-    let html = '';
-    res.data.forEach(s => {
-      html += `<div class="staff-row" onclick="showConfirmName('${s.ipn}', '${s.name}')">${s.name} (IPN: ${s.ipn})</div>`;
-    });
-    document.getElementById('staffList').innerHTML = html;
+    if(!q) return;
+    document.getElementById('staffList').innerHTML = '<div class="text-center p-3">กำลังค้นหา...</div>';
+    try {
+      const res = await apiFetch({action: 'searchStaff', query: q});
+      let html = '';
+      res.data.forEach(s => {
+        html += `<div class="staff-row p-3 shadow-sm mb-2" onclick="showConfirmName('${s.ipn}', '${s.name}')">
+                  <div class="fw-bold text-primary">${s.name}</div>
+                  <div class="small text-muted">IPN: ${s.ipn}</div>
+                </div>`;
+      });
+      document.getElementById('staffList').innerHTML = html || "ไม่พบข้อมูล";
+    } catch(e) { alert("การค้นหาผิดพลาด"); }
   }
 
   function showConfirmName(ipn, name) {
@@ -125,12 +128,13 @@
 
   function checkSpecialRank() {
     const rank = document.getElementById('rankSelector').value;
+    const roleArea = document.getElementById('specialRoleArea');
     if (rank === "OS" || rank === "WPR") {
-      document.getElementById('specialRoleArea').classList.remove('hidden');
+      roleArea.classList.remove('hidden');
       document.getElementById('roleBtnNormal').innerText = "Duty " + rank;
       document.getElementById('roleBtnNormal').dataset.val = rank;
     } else {
-      document.getElementById('specialRoleArea').classList.add('hidden');
+      roleArea.classList.add('hidden');
       selectedDuty = rank;
     }
   }
@@ -148,33 +152,37 @@
 
   async function proceedToItems() {
     const mainRank = document.getElementById('rankSelector').value;
+    if (!mainRank) return alert("เลือกตำแหน่งก่อน");
     if (!selectedDuty) selectedDuty = mainRank;
     crew.mainRank = mainRank;
-    const res = await fetch(`${API_URL}?action=getItems&rank=${selectedDuty}`);
-    const items = await res.json();
-    crew.allowedItems = items;
-    renderItems(items);
-    switchStep('step2');
+    try {
+      const items = await apiFetch({action: 'getItems', rank: selectedDuty});
+      crew.allowedItems = items;
+      renderItems(items);
+      switchStep('step2');
+    } catch(e) { alert("โหลดรายการไม่สำเร็จ"); }
   }
 
   function renderItems(items) {
     const list = document.getElementById('itemList');
     list.innerHTML = items.map((item, i) => `
-      <div class="item-card" id="itemBox_${i}">
-        <div class="d-flex justify-content-between">
-          <span>${item.name} (Max: ${item.limit})</span>
-          <input type="number" id="qty_${i}" class="form-control w-25" value="0" oninput="updateItemState(${i})">
+      <div class="item-card p-3 shadow-sm" id="itemBox_${i}">
+        <div class="row align-items-center">
+          <div class="col-7"><b>${item.name}</b><br><small>Limit: ${item.limit}</small></div>
+          <div class="col-5">
+            <input type="number" class="form-control text-center" id="qty_${i}" min="0" max="${item.limit}" value="0" oninput="updateItemState(${i})">
+          </div>
         </div>
         ${item.sizes.length > 0 ? `
-          <select id="size_${i}" class="form-select mt-2 disabled-input">
-            <option value="">-- ไซส์ --</option>
+          <select class="form-select mt-2 disabled-input" id="size_${i}">
+            <option value="">-- เลือกไซส์ --</option>
             ${item.sizes.map(s => `<option value="${s}">${s} ${shoeMap[s] ? '(EU '+shoeMap[s]+')' : ''}</option>`).join('')}
           </select>` : ''}
       </div>`).join('');
   }
 
   function updateItemState(i) {
-    const qty = document.getElementById('qty_'+i).value;
+    const qty = parseInt(document.getElementById('qty_'+i).value) || 0;
     const box = document.getElementById('itemBox_'+i);
     const size = document.getElementById('size_'+i);
     if (qty > 0) {
@@ -182,49 +190,49 @@
       if(size) size.classList.remove('disabled-input');
     } else {
       box.classList.remove('selected');
-      if(size) size.classList.add('disabled-input');
+      if(size) { size.classList.add('disabled-input'); size.value = ""; }
     }
   }
 
   function goToSummary() {
     let selected = [];
-    let err = false;
+    let hasError = false;
     crew.allowedItems.forEach((item, i) => {
-      const qty = parseInt(document.getElementById('qty_'+i).value);
-      if(qty > 0) {
-        const size = document.getElementById('size_'+i) ? document.getElementById('size_'+i).value : "";
-        if(document.getElementById('size_'+i) && !size) {
+      const qty = parseInt(document.getElementById('qty_'+i).value) || 0;
+      if (qty > 0) {
+        const sz = document.getElementById('size_'+i) ? document.getElementById('size_'+i).value : "";
+        if (document.getElementById('size_'+i) && !sz) {
           document.getElementById('itemBox_'+i).classList.add('error');
-          err = true;
+          hasError = true;
+        } else {
+          selected.push({ itemName: item.name, qty, size: sz ? sz + (shoeMap[sz] ? ' (EU '+shoeMap[sz]+')' : '') : 'N/A' });
         }
-        selected.push({ itemName: item.name, qty, size });
       }
     });
-    if(err) return alert("กรุณาเลือกไซส์");
+    if(hasError) return alert("กรุณาเลือกไซส์ให้ครบ");
+    if(selected.length === 0) return alert("เลือกของอย่างน้อย 1 อย่าง");
     crew.selected = selected;
-    document.getElementById('summaryContent').innerHTML = selected.map(s => `<div>${s.itemName} x ${s.qty} ${s.size}</div>`).join('');
+    document.getElementById('summaryContent').innerHTML = selected.map(s => `<div class="summary-item"><b>${s.itemName}</b> x ${s.qty} <br><small>Size: ${s.size}</small></div>`).join('');
     switchStep('step3');
   }
 
   async function confirmSubmit() {
     const btn = document.getElementById('btnConfirm');
-    btn.disabled = true;
-    const response = await fetch(`${API_URL}?action=submit`, {
-      method: 'POST',
-      body: JSON.stringify({
-        ipn: crew.ipn,
-        name: crew.name,
-        rank: crew.mainRank,
-        items: crew.selected
-      })
-    });
-    const res = await response.json();
-    if(res === "Success") switchStep('stepSuccess');
+    btn.disabled = true; btn.innerText = "กำลังบันทึก...";
+    try {
+      await fetch(API_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify({ ipn: crew.ipn, name: crew.name, rank: crew.mainRank, items: crew.selected })
+      });
+      switchStep('stepSuccess');
+    } catch(e) { alert("บันทึกไม่สำเร็จ"); btn.disabled = false; }
   }
 
   function switchStep(id) {
     ['step1', 'stepConfirmName', 'step2', 'step3', 'stepSuccess'].forEach(s => document.getElementById(s).classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
+    window.scrollTo(0,0);
   }
 </script>
 </body>
