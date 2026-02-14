@@ -33,8 +33,8 @@
         .list-summary-item:last-child { border-bottom: none; }
         .badge-qty { background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; }
         
-        /* No Item Styles */
         .no-item-alert { background: #fff5f5; border: 1px solid #feb2b2; color: var(--danger-color); padding: 15px; border-radius: 12px; text-align: center; font-weight: 600; }
+        .timestamp-text { font-size: 0.8rem; color: #94a3b8; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -64,11 +64,11 @@
                 <select id="vesselSelect" class="form-select form-select-lg" style="border-radius: 12px;"></select>
             </div>
             <div class="mb-3">
-                <label class="small fw-bold mb-1">ตำแหน่งที่ปฏิบัติงาน</label>
+                <label class="small fw-bold mb-1">ตำแหน่งที่ปฏิบัติงาน (Main Rank)</label>
                 <select id="rankSelect" class="form-select form-select-lg" style="border-radius: 12px;" onchange="checkDutyNeeded()"></select>
             </div>
             <div id="dutyArea" class="hidden mt-3 p-3 bg-light rounded-4 border">
-                <label class="text-danger fw-bold small mb-2">ระบุหน้าที่พิเศษ (Duty Rank)</label>
+                <label class="text-danger fw-bold small mb-2">เลือกหน้าที่สำหรับเบิกอุปกรณ์ (Duty Rank)</label>
                 <div class="d-grid gap-2" id="dutyButtons"></div>
             </div>
             <button class="btn btn-primary btn-main mt-4" onclick="validateStep2()">ถัดไป: เลือกอุปกรณ์ →</button>
@@ -89,7 +89,7 @@
             <div class="summary-box">
                 <div class="row">
                     <div class="col-12 mb-2">
-                        <div class="small text-muted">ชื่อ-นามสกุล:</div>
+                        <div class="small text-muted">ผู้เบิก:</div>
                         <div class="fw-bold text-dark" id="revName"></div>
                     </div>
                     <div class="col-6">
@@ -97,7 +97,7 @@
                         <div id="revRank" class="fw-bold"></div>
                     </div>
                     <div class="col-6 border-start">
-                        <div class="small text-muted px-2">เรือที่ปฏิบัติงาน:</div>
+                        <div class="small text-muted px-2">เรือ:</div>
                         <div id="revVessel" class="fw-bold px-2"></div>
                     </div>
                 </div>
@@ -118,7 +118,7 @@
             <h4 class="fw-bold mb-1">บันทึกเรียบร้อย</h4>
             <p class="text-muted small mb-4">กรุณาถ่ายรูปหน้าจอนี้ไว้เป็นหลักฐาน</p>
             
-            <div class="text-start p-3 rounded-4 mb-4 border" style="background: #fafafa; font-size: 0.95rem;">
+            <div class="text-start p-3 rounded-4 mb-3 border" style="background: #fafafa; font-size: 0.95rem;">
                 <div class="mb-3 pb-2 border-bottom">
                     <div class="row">
                         <div class="col-12 mb-1"><span class="text-muted small">ผู้เบิก:</span> <span class="fw-bold" id="finalStaffName"></span></div>
@@ -127,6 +127,7 @@
                     </div>
                 </div>
                 <div id="finalGearItems"></div>
+                <div id="finalTimestamp" class="timestamp-text border-top pt-2"></div>
             </div>
             
             <button class="btn btn-outline-secondary w-100" style="border-radius: 12px; padding: 12px;" onclick="location.reload()">ทำรายการใหม่</button>
@@ -136,7 +137,7 @@
 
 <script>
     const API_URL = "https://script.google.com/macros/s/AKfycby-HYmb_FuRONlgKqrswugZbiCnBLDu99M49Jxn3YNOsNPQQeB5RijAfqUSe8VOxIXRwQ/exec"; 
-    let currentStaff = {}, cachedInitData = null, selectedRankForGear = "", gearItems = [], finalSelected = [];
+    let currentStaff = {}, cachedInitData = null, dutyRankForGear = "", gearItems = [], finalSelected = [];
 
     function apiCall(action, params, callbackFn) {
         const cbName = 'jsonp_' + Date.now();
@@ -184,26 +185,37 @@
         const rank = document.getElementById('rankSelect').value;
         const dutyArea = document.getElementById('dutyArea'), dutyButtons = document.getElementById('dutyButtons');
         dutyButtons.innerHTML = '';
+        dutyRankForGear = ""; // Reset duty rank
+        
         if (rank === "OS" || rank === "WPR") {
-            dutyArea.classList.remove('hidden'); selectedRankForGear = "";
+            dutyArea.classList.remove('hidden');
             [rank, "MSM"].forEach(d => {
-                dutyButtons.innerHTML += `<input type="radio" class="btn-check" name="dutyOpt" id="d_${d}" onchange="selectedRankForGear='${d}'">
-                                         <label class="btn btn-outline-primary p-2" for="d_${d}">${d}</label>`;
+                const label = d === "MSM" ? "Messman" : d;
+                dutyButtons.innerHTML += `<input type="radio" class="btn-check" name="dutyOpt" id="d_${d}" onchange="dutyRankForGear='${d}'">
+                                         <label class="btn btn-outline-primary p-2" for="d_${d}">Duty ${label}</label>`;
             });
-        } else { dutyArea.classList.add('hidden'); selectedRankForGear = rank; }
+        } else { 
+            dutyArea.classList.add('hidden'); 
+            dutyRankForGear = rank; 
+        }
     }
 
     function validateStep2() {
         const v = document.getElementById('vesselSelect').value, r = document.getElementById('rankSelect').value;
         if(!v || !r) return alert("กรุณาเลือกเรือและตำแหน่ง");
-        if((r === "OS" || r === "WPR") && !selectedRankForGear) return alert("กรุณาระบุหน้าที่ (Duty Rank)");
-        currentStaff.vessel = v; currentStaff.rank = selectedRankForGear;
-        showStep('step3'); loadGearItems(selectedRankForGear);
+        if((r === "OS" || r === "WPR") && !dutyRankForGear) return alert("กรุณาระบุหน้าที่ (Duty Rank)");
+        
+        // เก็บค่าตำแหน่งจริง และเรือ
+        currentStaff.mainRank = r; 
+        currentStaff.vessel = v;
+        
+        showStep('step3'); 
+        loadGearItems(dutyRankForGear); // ใช้ Duty Rank แค่โหลดของ
     }
 
     function loadGearItems(rank) {
         const listDiv = document.getElementById('gearList');
-        listDiv.innerHTML = '<p class="text-center p-4">กำลังโหลดรายการอุปกรณ์...</p>';
+        listDiv.innerHTML = '<p class="text-center p-4">กำลังโหลดรายการอุปกรณ์สำหรับตำแหน่ง ' + rank + '...</p>';
         apiCall('getItems', {rank: rank}, (items) => {
             gearItems = items;
             let html = '';
@@ -273,8 +285,9 @@
         if(errorSize) return alert("กรุณาเลือกไซส์ของอุปกรณ์ที่คุณเลือก");
         if(finalSelected.length === 0) { if(!confirm("ยังไม่ได้เลือกอุปกรณ์ ยืนยันว่าไม่รับของใช่หรือไม่?")) return; }
 
+        // แสดงผลในหน้า Step 4 (สรุปก่อนบันทึก)
         document.getElementById('revName').innerText = currentStaff.name;
-        document.getElementById('revRank').innerText = currentStaff.rank;
+        document.getElementById('revRank').innerText = currentStaff.mainRank; // ใช้ตำแหน่งจริง
         document.getElementById('revVessel').innerText = currentStaff.vessel;
         
         let itemsHtml = '';
@@ -287,7 +300,6 @@
                     </div>`;
             });
         } else {
-            // ปรับปรุง: แสดงข้อความไม่รับของในหน้าตรวจสอบ
             itemsHtml = `<div class="no-item-alert my-3">⚠️ ไม่ต้องการรับอุปกรณ์</div>`;
         }
         document.getElementById('revItems').innerHTML = itemsHtml;
@@ -301,22 +313,31 @@
         await fetch(API_URL, {
             method: 'POST', mode: 'no-cors',
             body: JSON.stringify({
-                ipn: currentStaff.ipn, name: currentStaff.name,
-                rank: currentStaff.rank, vessel: currentStaff.vessel,
+                ipn: currentStaff.ipn, 
+                name: currentStaff.name,
+                rank: currentStaff.mainRank, // ส่งตำแหน่งจริงเข้า Sheet
+                vessel: currentStaff.vessel,
                 items: finalSelected
             })
         });
 
+        // แสดงผลหน้าสุดท้าย
         document.getElementById('finalStaffName').innerText = currentStaff.name;
-        document.getElementById('finalStaffRank').innerText = currentStaff.rank;
+        document.getElementById('finalStaffRank').innerText = currentStaff.mainRank; // แสดงตำแหน่งจริง
         document.getElementById('finalStaffVessel').innerText = currentStaff.vessel;
+
+        const now = new Date();
+        const dateString = now.toLocaleDateString('th-TH', { day: '2-digit', month: 'long', year: 'numeric' });
+        const timeString = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+        document.getElementById('finalTimestamp').innerText = `ทำรายการเมื่อ: ${dateString} เวลา ${timeString} น.`;
 
         let finalHtml = ``;
         if(finalSelected.length > 0) {
             finalHtml = `<div class="small fw-bold text-success mb-2">รายการอุปกรณ์ที่เบิก:</div>`;
-            finalSelected.forEach(it => { finalHtml += `<div class="mb-2">✅ ${it.display} <br><span class="text-muted small">จำนวน ${it.qty} ชิ้น</span></div>`; });
+            finalSelected.forEach(it => { 
+                finalHtml += `<div class="mb-2">✅ ${it.display} <br><span class="text-muted small">จำนวน ${it.qty} ชิ้น</span></div>`; 
+            });
         } else {
-            // ปรับปรุง: แสดงข้อความไม่รับของในหน้าสรุปสุดท้าย
             finalHtml = `<div class="no-item-alert">ไม่ต้องการรับอุปกรณ์</div>`;
         }
         document.getElementById('finalGearItems').innerHTML = finalHtml;
