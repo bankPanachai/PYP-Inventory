@@ -3,121 +3,79 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Crew Gear Requisition</title>
+  <title>Crew Requisition System</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700;800&display=swap" rel="stylesheet">
   <style>
     :root { --primary: #2563eb; --bg: #f8fafc; }
-    body { background-color: var(--bg); font-family: 'Sarabun', sans-serif; -webkit-tap-highlight-color: transparent; padding-bottom: 30px; }
-    .card-main { background: white; border-radius: 20px; box-shadow: 0 4px 25px rgba(0,0,0,0.1); padding: 25px; border: none; margin-top: 20px; }
-    
-    .btn-step { width: 45px; height: 45px; border-radius: 12px; border: 1px solid #ddd; background: #fff; font-size: 24px; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-    .btn-step:active { background: #f1f5f9; transform: scale(0.9); }
+    body { background-color: var(--bg); font-family: 'Sarabun', sans-serif; padding-bottom: 30px; }
+    .card-main { background: white; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 25px; margin-top: 20px; border: none; }
+    .item-card { border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 18px; margin-bottom: 12px; }
+    .item-card.has-val { border-color: var(--primary); background: #eff6ff; }
+    .btn-step { width: 45px; height: 45px; border-radius: 12px; border: 1px solid #ddd; background: white; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; }
     .qty-val { font-size: 22px; font-weight: 800; min-width: 35px; text-align: center; }
-
-    .item-card { border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 18px; margin-bottom: 15px; }
-    .item-card.has-val { border-color: var(--primary); background-color: #eff6ff; }
-    .item-card.error { border-color: #ef4444; background: #fef2f2; }
-
-    .staff-row { border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; margin-bottom: 10px; cursor: pointer; background: #fff; }
-    .role-btn { border: 2px solid #e2e8f0; border-radius: 15px; padding: 15px; text-align: center; cursor: pointer; font-weight: 800; background: white; }
-    .role-btn.active { border-color: var(--primary); background-color: var(--primary); color: white; }
-    
     .hidden { display: none; }
-    .btn-main { border-radius: 15px; padding: 16px; font-weight: 800; font-size: 18px; }
-    .summary-item { background: #f8fafc; border-radius: 12px; padding: 15px; margin-bottom: 10px; border: 1px solid #e2e8f0; }
-    .profile-banner { background: #eef2ff; border-radius: 15px; padding: 15px; border: 1px solid #c3dafe; }
+    .profile-banner { background: #eef2ff; border-radius: 15px; padding: 15px; border: 1px solid #c3dafe; margin-bottom: 20px; }
   </style>
 </head>
 <body>
 
-<div class="container" style="max-width: 500px;">
+<div class="container" style="max-width: 480px;">
   <div class="card-main">
     
     <div id="step1">
-      <h4 class="fw-bold mb-3 text-center">🚢 ระบบเบิกอุปกรณ์</h4>
-      <div class="input-group mb-4 shadow-sm" style="border-radius: 15px; overflow: hidden;">
-        <input type="text" id="searchInput" class="form-control p-3 border-0" placeholder="พิมพ์ชื่อหรือ StaffID...">
-        <button class="btn btn-primary px-4" onclick="searchCrew()">ค้นหา</button>
-      </div>
-      <div id="staffList"></div>
+      <h5 class="fw-bold mb-3">🔍 ค้นหารายชื่อพนักงาน</h5>
+      <input type="text" id="searchInput" class="form-control p-3 mb-3" style="border-radius:12px" placeholder="พิมพ์ชื่อ หรือ ID...">
+      <button class="btn btn-primary w-100 p-3 fw-bold shadow-sm" onclick="searchCrew()">ค้นหาข้อมูล</button>
+      <div id="staffList" class="mt-3"></div>
     </div>
 
-    <div id="stepConfirmName" class="hidden">
+    <div id="stepConfirm" class="hidden">
       <button class="btn btn-sm text-muted mb-3" onclick="switchStep('step1')">← กลับไปค้นหา</button>
-      <div class="profile-banner text-center mb-4">
-        <div class="fs-4 fw-bold text-primary" id="confirmingName"></div>
-        <div class="text-muted">StaffID: <span id="confirmingIpn"></span></div>
+      <div class="profile-banner text-center shadow-sm">
+        <div class="fs-5 fw-bold text-primary" id="cName"></div>
+        <div class="text-muted small">StaffID: <span id="cIpn"></span></div>
       </div>
-      <div class="mb-4">
-        <label class="fw-bold mb-2 small text-muted">ตำแหน่ง (Position)</label>
-        <select class="form-select form-select-lg" id="rankSelector" onchange="checkSpecialRank()" style="border-radius: 12px;"></select>
-      </div>
-      <div id="specialRoleArea" class="hidden mb-4">
-        <div class="row g-2">
-          <div class="col-6"><div class="role-btn" id="roleBtnNormal" onclick="selectRole('normal')"></div></div>
-          <div class="col-6"><div class="role-btn" id="roleBtnMSM" onclick="selectRole('MSM')">Duty MSM</div></div>
-        </div>
-      </div>
-      <button class="btn btn-primary w-100 btn-main" onclick="proceedToItems()">เลือกรายการเบิก →</button>
+      <label class="fw-bold small mb-2">เลือกตำแหน่ง (Position)</label>
+      <select id="rankSelector" class="form-select form-select-lg mb-4" style="border-radius:12px"></select>
+      <button class="btn btn-primary w-100 p-3 fw-bold" onclick="proceedToItems()">ถัดไป →</button>
     </div>
 
-    <div id="step2" class="hidden">
-      <button class="btn btn-sm text-muted mb-3" onclick="switchStep('stepConfirmName')">← ย้อนกลับ</button>
-      <h5 class="fw-bold mb-4 text-center">เลือกอุปกรณ์ที่ต้องการ</h5>
+    <div id="stepItems" class="hidden">
+      <button class="btn btn-sm text-muted mb-3" onclick="switchStep('stepConfirm')">← ย้อนกลับ</button>
+      <h6 class="fw-bold mb-3">เลือกจำนวนและไซส์ (รองเท้าเบิกได้ 2 คู่)</h6>
       <div id="itemList"></div>
-      <button class="btn btn-primary w-100 btn-main mt-3" onclick="goToSummary()">ดูสรุปรายการ →</button>
+      <button class="btn btn-primary w-100 p-3 fw-bold mt-3" onclick="goToSummary()">ดูสรุปรายการ →</button>
     </div>
 
-    <div id="step3" class="hidden">
-      <button class="btn btn-sm text-muted mb-3" onclick="switchStep('step2')">← ย้อนกลับไปแก้ไข</button>
-      <h5 class="fw-bold mb-3 text-center">ตรวจสอบข้อมูลก่อนบันทึก</h5>
-      
-      <div class="profile-banner mb-4">
-        <div class="fw-bold text-primary" id="sumCrewName"></div>
-        <div class="small text-muted">ID: <span id="sumCrewIpn"></span> | Pos: <span id="sumCrewRank"></span></div>
+    <div id="stepSummary" class="hidden">
+      <button class="btn btn-sm text-muted mb-3" onclick="switchStep('stepItems')">← แก้ไขรายการ</button>
+      <h5 class="fw-bold text-center mb-4">สรุปข้อมูลการเบิก</h5>
+      <div class="p-3 mb-4 bg-light rounded-3 border">
+        <div class="fw-bold text-primary" id="sName"></div>
+        <div class="small text-muted" id="sInfo"></div>
+        <hr>
+        <div id="summaryContent"></div>
       </div>
-
-      <div id="summaryContent" class="mb-4"></div>
-      
-      <button id="btnConfirm" class="btn btn-success w-100 btn-main shadow mb-2" onclick="confirmSubmit()">ยืนยันข้อมูลถูกต้อง</button>
+      <button id="btnSubmit" class="btn btn-success w-100 p-3 fw-bold shadow" onclick="confirmSubmit()">ยืนยันบันทึกข้อมูล</button>
     </div>
 
     <div id="stepSuccess" class="hidden text-center py-5">
-      <div class="display-1 text-success mb-3">✔</div>
-      <h4 class="fw-bold">บันทึกเรียบร้อย</h4>
-      <button class="btn btn-primary btn-main px-5 mt-3" onclick="location.reload()">ทำรายการใหม่</button>
+      <div class="display-3 text-success mb-3">✔</div>
+      <h4 class="fw-bold">บันทึกสำเร็จ</h4>
+      <button class="btn btn-primary w-100 mt-4" onclick="location.reload()">กลับหน้าหลัก</button>
     </div>
 
   </div>
 </div>
 
 <script>
-  // เปลี่ยนเป็น URL ล่าสุดของคุณ
-  const API_URL = "https://script.google.com/macros/s/AKfycbyQDX_gRWJ_7kaLZT7PqzNwVxyUmnkZk8By8VzIzqfbL7DLQdSTTZy40nZG9KQHdJnfRA/exec"; 
+  // *** สำคัญ: ต้องใช้ URL ล่าสุดจากการ Deploy เป็น "New Version" เท่านั้น ***
+  const API_URL = "https://script.google.com/macros/s/AKfycbzNT9xSWH_AFY2Fqe6HTde89-BIOmDsS_M18CEqOW3m9EPZeWjKS9L1SEDECvLHDc7FdA/exec"; 
 
   let crew = {};
-  let selectedDuty = "";
   let itemsData = [];
-  const shoeMap = { "4": "38", "5": "39", "6": "40", "7": "41", "8": "42", "9": "43", "10": "44", "11": "45", "12": "46" };
-
-  function apiFetch(params) {
-    return new Promise((resolve, reject) => {
-      const callbackName = 'jsonp_' + Math.round(100000 * Math.random());
-      window[callbackName] = function(data) {
-        delete window[callbackName];
-        document.body.removeChild(script);
-        resolve(data);
-      };
-      const url = new URL(API_URL);
-      Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
-      url.searchParams.append('callback', callbackName);
-      const script = document.createElement('script');
-      script.src = url.toString();
-      script.onerror = () => reject(new Error('Network Error'));
-      document.body.appendChild(script);
-    });
-  }
+  const shoeMap = { "4":"38", "5":"39", "6":"40", "7":"41", "8":"42", "9":"43", "10":"44", "11":"45", "12":"46" };
 
   window.onload = async () => {
     const ranks = await apiFetch({action: 'getRanks'});
@@ -129,88 +87,62 @@
   async function searchCrew() {
     const q = document.getElementById('searchInput').value;
     if(!q) return;
-    document.getElementById('staffList').innerHTML = '<div class="text-center p-4">กำลังค้นหา...</div>';
     const res = await apiFetch({action: 'searchStaff', query: q});
     let html = '';
     res.data.forEach(s => {
-      html += `<div class="staff-row p-3 shadow-sm mb-2" onclick="showConfirmName('${s.ipn}', '${s.name}')">
+      html += `<div class="card p-3 mb-2 shadow-sm border-0" style="cursor:pointer; background:#f1f5f9" onclick="selectCrew('${s.ipn}', '${s.name}')">
                 <div class="fw-bold text-primary">${s.name}</div>
-                <div class="small text-muted">ID: ${s.ipn}</div>
+                <div class="small text-muted">StaffID: ${s.ipn}</div>
               </div>`;
     });
-    document.getElementById('staffList').innerHTML = html || '<div class="p-3 text-center">ไม่พบข้อมูล</div>';
+    document.getElementById('staffList').innerHTML = html || 'ไม่พบรายชื่อพนักงาน';
   }
 
-  function showConfirmName(ipn, name) {
+  function selectCrew(ipn, name) {
     crew = { ipn, name };
-    document.getElementById('confirmingName').innerText = name;
-    document.getElementById('confirmingIpn').innerText = ipn;
-    switchStep('stepConfirmName');
-  }
-
-  function checkSpecialRank() {
-    const r = document.getElementById('rankSelector').value;
-    const area = document.getElementById('specialRoleArea');
-    if (r === "OS" || r === "WPR") {
-      area.classList.remove('hidden');
-      document.getElementById('roleBtnNormal').innerText = "Duty " + r;
-      document.getElementById('roleBtnNormal').dataset.val = r;
-    } else {
-      area.classList.add('hidden');
-      selectedDuty = r;
-    }
-  }
-
-  function selectRole(t) {
-    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
-    if (t === 'normal') {
-      document.getElementById('roleBtnNormal').classList.add('active');
-      selectedDuty = document.getElementById('roleBtnNormal').dataset.val;
-    } else {
-      document.getElementById('roleBtnMSM').classList.add('active');
-      selectedDuty = "MSM";
-    }
+    document.getElementById('cName').innerText = name;
+    document.getElementById('cIpn').innerText = ipn;
+    switchStep('stepConfirm');
   }
 
   async function proceedToItems() {
-    const rankVal = document.getElementById('rankSelector').value;
-    if (!rankVal) return alert("เลือกตำแหน่งก่อน");
-    if (!selectedDuty) selectedDuty = rankVal;
-    crew.mainRank = rankVal;
-    itemsData = await apiFetch({action: 'getItems', rank: selectedDuty});
+    crew.rank = document.getElementById('rankSelector').value;
+    if(!crew.rank) return alert("โปรดเลือกตำแหน่ง");
+    itemsData = await apiFetch({action: 'getItems', rank: crew.rank});
     renderItems();
-    switchStep('step2');
+    switchStep('stepItems');
   }
 
   function renderItems() {
-    const list = document.getElementById('itemList');
-    list.innerHTML = itemsData.map((item, i) => `
-      <div class="item-card shadow-sm" id="itemBox_${i}">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <div class="fw-bold">${item.name} <br><small class="text-muted fw-normal">Max: ${item.limit}</small></div>
-          <div class="qty-box d-flex align-items-center gap-3">
-            <div class="btn-step" onclick="changeQty(${i}, -1)">-</div>
-            <div class="qty-val" id="qtext_${i}">0</div>
-            <div class="btn-step" onclick="changeQty(${i}, 1)">+</div>
+    document.getElementById('itemList').innerHTML = itemsData.map((item, i) => {
+      // ปรับให้ Safety Shoes มีลิมิต 2 หน่วยเสมอ
+      let limit = item.name.toLowerCase().includes('shoe') ? 2 : item.limit;
+      return `
+      <div class="item-card shadow-sm" id="box_${i}">
+        <div class="d-flex justify-content-between align-items-center">
+          <div class="fw-bold">${item.name} <br><small class="text-muted">ลิมิต: ${limit} หน่วย</small></div>
+          <div class="qty-box d-flex align-items-center gap-2">
+            <div class="btn-step" onclick="changeQty(${i}, -1, ${limit})">-</div>
+            <div class="qty-val" id="q_${i}">0</div>
+            <div class="btn-step" onclick="changeQty(${i}, 1, ${limit})">+</div>
           </div>
         </div>
         ${item.sizes.length > 0 ? `
-          <select class="form-select mt-2 hidden" id="size_${i}">
+          <select class="form-select mt-2 hidden" id="s_${i}" style="border-radius:10px">
             <option value="">-- เลือกไซส์ --</option>
             ${item.sizes.map(s => `<option value="${s}">Size ${s} / EU ${shoeMap[s] || '-'}</option>`).join('')}
           </select>` : ''}
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
 
-  function changeQty(i, delta) {
-    let val = parseInt(document.getElementById('qtext_'+i).innerText) + delta;
-    if (val < 0) val = 0;
-    if (val > itemsData[i].limit) val = itemsData[i].limit;
-    document.getElementById('qtext_'+i).innerText = val;
-    
-    const box = document.getElementById('itemBox_'+i);
-    const sz = document.getElementById('size_'+i);
-    if (val > 0) {
+  function changeQty(i, delta, limit) {
+    let q = parseInt(document.getElementById('q_'+i).innerText) + delta;
+    if (q < 0) q = 0; if (q > limit) q = limit;
+    document.getElementById('q_'+i).innerText = q;
+    const box = document.getElementById('box_'+i);
+    const sz = document.getElementById('s_'+i);
+    if(q > 0) {
       box.classList.add('has-val');
       if(sz) sz.classList.remove('hidden');
     } else {
@@ -220,58 +152,57 @@
   }
 
   function goToSummary() {
-    let sel = [];
-    let err = false;
+    let sel = []; let err = false;
     itemsData.forEach((item, i) => {
-      const q = parseInt(document.getElementById('qtext_'+i).innerText);
-      if (q > 0) {
-        const sz = document.getElementById('size_'+i) ? document.getElementById('size_'+i).value : "";
-        if (document.getElementById('size_'+i) && !sz) {
-          document.getElementById('itemBox_'+i).classList.add('error');
-          err = true;
+      const q = parseInt(document.getElementById('q_'+i).innerText);
+      if(q > 0) {
+        const szVal = document.getElementById('s_'+i) ? document.getElementById('s_'+i).value : "";
+        if(document.getElementById('s_'+i) && !szVal) {
+          document.getElementById('box_'+i).style.borderColor = 'red'; err = true;
         } else {
-          document.getElementById('itemBox_'+i).classList.remove('error');
-          const sizeLabel = sz ? `Size ${sz} / EU ${shoeMap[sz]}` : "-";
-          sel.push({ itemName: item.name, qty: q, size: sizeLabel });
+          document.getElementById('box_'+i).style.borderColor = '';
+          const szLabel = szVal ? `Size ${szVal} / EU ${shoeMap[szVal]}` : "-";
+          sel.push({ itemName: item.name, qty: q, size: szLabel });
         }
       }
     });
-    if(err) return alert("กรุณาเลือกไซส์อุปกรณ์ที่ต้องการเบิก");
+    if(err) return alert("กรุณาเลือกไซส์ของอุปกรณ์ที่ต้องการ");
     
     crew.selected = sel;
-    document.getElementById('sumCrewName').innerText = crew.name;
-    document.getElementById('sumCrewIpn').innerText = crew.ipn;
-    document.getElementById('sumCrewRank').innerText = crew.mainRank;
-
-    let html = sel.map(s => `
-      <div class="summary-item">
-        <div class="fw-bold text-dark">${s.itemName}</div>
-        <div class="d-flex justify-content-between small text-muted">
-          <span>จำนวน: ${s.qty}</span>
-          <span>ไซส์: ${s.size}</span>
-        </div>
-      </div>`).join('');
-    document.getElementById('summaryContent').innerHTML = html || '<div class="alert alert-warning text-center"><b>ไม่ได้เลือกรายการ</b><br>ข้อมูลจะบันทึกว่าไม่ต้องการรับอุปกรณ์</div>';
-    switchStep('step3');
+    document.getElementById('sName').innerText = crew.name;
+    document.getElementById('sInfo').innerText = `StaffID: ${crew.ipn} | Position: ${crew.rank}`;
+    document.getElementById('summaryContent').innerHTML = sel.map(s => `
+      <div class="mb-2 p-2 bg-white border rounded">
+        <b>• ${s.itemName}</b><br>
+        <span class="small text-muted">จำนวน: ${s.qty} หน่วย | ไซส์: ${s.size}</span>
+      </div>`).join('') || '<div class="text-danger">ไม่เลือกรับอุปกรณ์</div>';
+    switchStep('stepSummary');
   }
 
   async function confirmSubmit() {
-    const btn = document.getElementById('btnConfirm');
-    btn.disabled = true; btn.innerText = "กำลังบันทึก...";
+    const btn = document.getElementById('btnSubmit');
+    btn.disabled = true; btn.innerText = "กำลังบันทึกข้อมูล...";
     try {
       await fetch(API_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        body: JSON.stringify({ ipn: crew.ipn, name: crew.name, rank: crew.mainRank, items: crew.selected })
+        method: 'POST', mode: 'no-cors',
+        body: JSON.stringify({ ipn: crew.ipn, name: crew.name, rank: crew.rank, items: crew.selected })
       });
       switchStep('stepSuccess');
-    } catch(e) { 
-      alert("Error"); btn.disabled = false; btn.innerText = "ยืนยันข้อมูลถูกต้อง";
-    }
+    } catch(e) { alert("เกิดข้อผิดพลาดในการบันทึก"); btn.disabled = false; }
+  }
+
+  function apiFetch(p) {
+    return new Promise(res => {
+      const cb = 'callback_' + Math.round(1000000 * Math.random());
+      window[cb] = (d) => { res(d); delete window[cb]; };
+      const s = document.createElement('script');
+      s.src = API_URL + "?" + new URLSearchParams({...p, callback: cb});
+      document.body.appendChild(s);
+    });
   }
 
   function switchStep(id) {
-    ['step1', 'stepConfirmName', 'step2', 'step3', 'stepSuccess'].forEach(s => document.getElementById(s).classList.add('hidden'));
+    ['step1', 'stepConfirm', 'stepItems', 'stepSummary', 'stepSuccess'].forEach(s => document.getElementById(s).classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
     window.scrollTo(0,0);
   }
