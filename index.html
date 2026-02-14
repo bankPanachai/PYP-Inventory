@@ -77,16 +77,23 @@
 
 <script>
   // เปลี่ยน URL นี้เป็น Web App URL ของคุณ
-  const API_URL = "https://script.google.com/macros/s/AKfycbwdMBz4lHAHmvRpxEcgQgk46Hm-_nk3kw8QLNIJmLRzC2GhAnhWJH4Vscz48yZoUqBD7Q/exec"; 
+  const API_URL = "https://script.google.com/macros/s/AKfycbxqlBgaZ2LT5m99FzZkbQW_NMqIFYPp-OiLWwMM86dyw2KTHu4zg_2UnqCSUxBP3Tlv/exec"; 
 
   let crew = {};
   let selectedDuty = "";
   const shoeMap = { "4": "38", "5": "39", "6": "40", "7": "41", "8": "42", "9": "43", "10": "44", "11": "45", "12": "46" };
 
+  // ฟังก์ชัน API Fetch ที่แก้ปัญหา Redirect ของ Google
   async function apiFetch(params) {
     const url = new URL(API_URL);
     Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
-    const res = await fetch(url);
+    
+    // สำคัญ: Google จะ Redirect (302) ลิงก์ไปหาหน้าอื่น ต้องใช้ redirect: 'follow'
+    const res = await fetch(url.toString(), {
+      method: 'GET',
+      mode: 'cors',
+      redirect: 'follow'
+    });
     return await res.json();
   }
 
@@ -99,7 +106,7 @@
         opt.value = r; opt.innerText = r;
         sel.appendChild(opt);
       });
-    } catch(e) { console.error("Error loading ranks"); }
+    } catch(e) { console.error("Error loading ranks:", e); }
   };
 
   async function searchCrew() {
@@ -109,14 +116,19 @@
     try {
       const res = await apiFetch({action: 'searchStaff', query: q});
       let html = '';
-      res.data.forEach(s => {
-        html += `<div class="staff-row p-3 shadow-sm mb-2" onclick="showConfirmName('${s.ipn}', '${s.name}')">
-                  <div class="fw-bold text-primary">${s.name}</div>
-                  <div class="small text-muted">IPN: ${s.ipn}</div>
-                </div>`;
-      });
-      document.getElementById('staffList').innerHTML = html || "ไม่พบข้อมูล";
-    } catch(e) { alert("การค้นหาผิดพลาด"); }
+      if(res.data && res.data.length > 0) {
+        res.data.forEach(s => {
+          html += `<div class="staff-row p-3 shadow-sm mb-2" onclick="showConfirmName('${s.ipn}', '${s.name}')">
+                    <div class="fw-bold text-primary">${s.name}</div>
+                    <div class="small text-muted">IPN: ${s.ipn}</div>
+                  </div>`;
+        });
+      }
+      document.getElementById('staffList').innerHTML = html || '<div class="alert alert-warning">ไม่พบชื่อนี้</div>';
+    } catch(e) { 
+      console.error(e);
+      alert("การค้นหาผิดพลาด: ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต"); 
+    }
   }
 
   function showConfirmName(ipn, name) {
@@ -220,13 +232,18 @@
     const btn = document.getElementById('btnConfirm');
     btn.disabled = true; btn.innerText = "กำลังบันทึก...";
     try {
+      // ใช้ no-cors สำหรับส่งข้อมูล POST ป้องกันปัญหา Preflight (OPTIONS)
       await fetch(API_URL, {
         method: 'POST',
         mode: 'no-cors',
         body: JSON.stringify({ ipn: crew.ipn, name: crew.name, rank: crew.mainRank, items: crew.selected })
       });
       switchStep('stepSuccess');
-    } catch(e) { alert("บันทึกไม่สำเร็จ"); btn.disabled = false; }
+    } catch(e) { 
+      alert("บันทึกไม่สำเร็จ"); 
+      btn.disabled = false; 
+      btn.innerText = "ยืนยันบันทึกข้อมูล";
+    }
   }
 
   function switchStep(id) {
