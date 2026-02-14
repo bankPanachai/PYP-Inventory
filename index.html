@@ -1,211 +1,333 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Crew Requisition System</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700;800&display=swap" rel="stylesheet">
-  <style>
-    :root { --primary: #2563eb; --bg: #f8fafc; }
-    body { background-color: var(--bg); font-family: 'Sarabun', sans-serif; padding-bottom: 30px; }
-    .card-main { background: white; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 25px; margin-top: 20px; border: none; }
-    .item-card { border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 18px; margin-bottom: 12px; }
-    .item-card.has-val { border-color: var(--primary); background: #eff6ff; }
-    .btn-step { width: 45px; height: 45px; border-radius: 12px; border: 1px solid #ddd; background: white; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-    .qty-val { font-size: 22px; font-weight: 800; min-width: 35px; text-align: center; }
-    .hidden { display: none; }
-    .profile-banner { background: #eef2ff; border-radius: 15px; padding: 15px; border: 1px solid #c3dafe; margin-bottom: 20px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ระบบเบิกอุปกรณ์พนักงานเรือ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary-color: #0066cc; --success-color: #28a745; --danger-color: #dc3545; --bg-color: #f0f4f8; }
+        body { background-color: var(--bg-color); font-family: 'Prompt', sans-serif; color: #333; -webkit-tap-highlight-color: transparent; }
+        .app-container { max-width: 480px; margin: auto; padding: 15px; }
+        .card-main { background: white; border-radius: 20px; border: none; box-shadow: 0 8px 20px rgba(0,0,0,0.06); padding: 24px; margin-bottom: 20px; }
+        .btn-main { border-radius: 12px; padding: 14px; font-weight: 600; font-size: 1.1rem; width: 100%; transition: all 0.2s; border: none; }
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-success { background-color: var(--success-color); color: white; }
+        
+        /* Item Selection */
+        .item-card { border: 2px solid #edf2f7; border-radius: 18px; padding: 18px; margin-bottom: 15px; background: #fff; transition: 0.3s; }
+        .item-card.active { border-color: var(--primary-color); background: #f0f7ff; }
+        
+        /* Controller */
+        .qty-controller { display: flex; align-items: center; justify-content: space-between; background: #f1f5f9; border-radius: 10px; padding: 4px; }
+        .btn-qty { width: 38px; height: 38px; border-radius: 8px; border: none; background: white; font-size: 1.4rem; font-weight: bold; color: var(--primary-color); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .qty-display { font-weight: 600; font-size: 1.1rem; min-width: 35px; text-align: center; }
+        
+        /* Summary UI */
+        .summary-box { background: #f8fbff; border-radius: 15px; padding: 18px; margin-bottom: 20px; border: 1px solid #e1e8f0; border-left: 6px solid var(--primary-color); }
+        .hidden { display: none; }
+        .back-link { color: #64748b; text-decoration: none; font-size: 0.9rem; margin-bottom: 15px; display: inline-block; font-weight: 500; }
+        
+        .list-summary-item { padding: 12px 0; border-bottom: 1px dashed #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+        .list-summary-item:last-child { border-bottom: none; }
+        .badge-qty { background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; }
+        
+        /* No Item Styles */
+        .no-item-alert { background: #fff5f5; border: 1px solid #feb2b2; color: var(--danger-color); padding: 15px; border-radius: 12px; text-align: center; font-weight: 600; }
+    </style>
 </head>
 <body>
 
-<div class="container" style="max-width: 480px;">
-  <div class="card-main">
+<div class="app-container">
     
     <div id="step1">
-      <h5 class="fw-bold mb-3">🔍 ค้นหารายชื่อพนักงาน</h5>
-      <input type="text" id="searchInput" class="form-control p-3 mb-3" style="border-radius:12px" placeholder="พิมพ์ชื่อ หรือ ID...">
-      <button class="btn btn-primary w-100 p-3 fw-bold shadow-sm" onclick="searchCrew()">ค้นหาข้อมูล</button>
-      <div id="staffList" class="mt-3"></div>
+        <div class="text-center mt-5 mb-4">
+            <h2 class="fw-bold text-primary">Crew Requisition Form</h2>
+            <p class="text-muted">แบบฟอร์มเบิกเครื่องแบบคนประจำเรือ</p>
+        </div>
+        <div class="card-main">
+            <label class="mb-2 fw-bold">ระบุรหัสพนักงานหรือชื่อภาษาอังกฤษ</label>
+            <input type="text" id="searchInp" class="form-control form-control-lg mb-3" placeholder="ตัวอย่าง: TH123456" style="border-radius: 12px;">
+            <button class="btn btn-primary btn-main shadow-sm" onclick="searchCrew()">ค้นหารายชื่อ</button>
+        </div>
+        <div id="staffList"></div>
     </div>
 
-    <div id="stepConfirm" class="hidden">
-      <button class="btn btn-sm text-muted mb-3" onclick="switchStep('step1')">← กลับไปค้นหา</button>
-      <div class="profile-banner text-center shadow-sm">
-        <div class="fs-5 fw-bold text-primary" id="cName"></div>
-        <div class="text-muted small">StaffID: <span id="cIpn"></span></div>
-      </div>
-      <label class="fw-bold small mb-2">เลือกตำแหน่ง (Position)</label>
-      <select id="rankSelector" class="form-select form-select-lg mb-4" style="border-radius:12px"></select>
-      <button class="btn btn-primary w-100 p-3 fw-bold" onclick="proceedToItems()">ถัดไป →</button>
+    <div id="step2" class="hidden">
+        <a href="javascript:void(0)" class="back-link" onclick="showStep('step1')">← กลับไปหน้าค้นหา</a>
+        <div class="card-main">
+            <h5 id="dispName" class="fw-bold text-primary mb-1"></h5>
+            <p id="dispIpn" class="text-muted mb-4"></p>
+            <div class="mb-3">
+                <label class="small fw-bold mb-1">เรือที่จะไปปฏิบัติงาน</label>
+                <select id="vesselSelect" class="form-select form-select-lg" style="border-radius: 12px;"></select>
+            </div>
+            <div class="mb-3">
+                <label class="small fw-bold mb-1">ตำแหน่งที่ปฏิบัติงาน</label>
+                <select id="rankSelect" class="form-select form-select-lg" style="border-radius: 12px;" onchange="checkDutyNeeded()"></select>
+            </div>
+            <div id="dutyArea" class="hidden mt-3 p-3 bg-light rounded-4 border">
+                <label class="text-danger fw-bold small mb-2">ระบุหน้าที่พิเศษ (Duty Rank)</label>
+                <div class="d-grid gap-2" id="dutyButtons"></div>
+            </div>
+            <button class="btn btn-primary btn-main mt-4" onclick="validateStep2()">ถัดไป: เลือกอุปกรณ์ →</button>
+        </div>
     </div>
 
-    <div id="stepItems" class="hidden">
-      <button class="btn btn-sm text-muted mb-3" onclick="switchStep('stepConfirm')">← ย้อนกลับ</button>
-      <h6 class="fw-bold mb-3">เลือกจำนวนและไซส์ (รองเท้าเบิกได้ 2 คู่)</h6>
-      <div id="itemList"></div>
-      <button class="btn btn-primary w-100 p-3 fw-bold mt-3" onclick="goToSummary()">ดูสรุปรายการ →</button>
+    <div id="step3" class="hidden">
+        <a href="javascript:void(0)" class="back-link" onclick="showStep('step2')">← ย้อนกลับ</a>
+        <h4 class="fw-bold mb-3">เลือกอุปกรณ์</h4>
+        <div id="gearList"></div>
+        <button class="btn btn-primary btn-main mt-3 shadow" onclick="prepareReview()">ตรวจสอบข้อมูล →</button>
     </div>
 
-    <div id="stepSummary" class="hidden">
-      <button class="btn btn-sm text-muted mb-3" onclick="switchStep('stepItems')">← แก้ไขรายการ</button>
-      <h5 class="fw-bold text-center mb-4">สรุปข้อมูลการเบิก</h5>
-      <div class="p-3 mb-4 bg-light rounded-3 border">
-        <div class="fw-bold text-primary" id="sName"></div>
-        <div class="small text-muted" id="sInfo"></div>
-        <hr>
-        <div id="summaryContent"></div>
-      </div>
-      <button id="btnSubmit" class="btn btn-success w-100 p-3 fw-bold shadow" onclick="confirmSubmit()">ยืนยันบันทึกข้อมูล</button>
+    <div id="step4" class="hidden">
+        <a href="javascript:void(0)" class="back-link" onclick="showStep('step3')">← กลับไปแก้ไขรายการ</a>
+        <div class="card-main">
+            <h4 class="fw-bold mb-4 text-center">สรุปรายการเบิก</h4>
+            <div class="summary-box">
+                <div class="row">
+                    <div class="col-12 mb-2">
+                        <div class="small text-muted">ชื่อ-นามสกุล:</div>
+                        <div class="fw-bold text-dark" id="revName"></div>
+                    </div>
+                    <div class="col-6">
+                        <div class="small text-muted">ตำแหน่ง:</div>
+                        <div id="revRank" class="fw-bold"></div>
+                    </div>
+                    <div class="col-6 border-start">
+                        <div class="small text-muted px-2">เรือที่ปฏิบัติงาน:</div>
+                        <div id="revVessel" class="fw-bold px-2"></div>
+                    </div>
+                </div>
+            </div>
+            <label class="fw-bold mb-2">รายการที่เบิก:</label>
+            <div id="revItems" class="mb-4"></div>
+            <button id="btnSubmit" class="btn btn-success btn-main shadow" onclick="submitData()">ยืนยันและบันทึกข้อมูล</button>
+        </div>
     </div>
 
-    <div id="stepSuccess" class="hidden text-center py-5">
-      <div class="display-3 text-success mb-3">✔</div>
-      <h4 class="fw-bold">บันทึกสำเร็จ</h4>
-      <button class="btn btn-primary w-100 mt-4" onclick="location.reload()">กลับหน้าหลัก</button>
+    <div id="step5" class="hidden text-center">
+        <div class="card-main py-4">
+            <div class="mb-3">
+                <div style="background: #ecfdf5; width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: auto;">
+                    <svg width="40" height="40" fill="#10b981" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>
+                </div>
+            </div>
+            <h4 class="fw-bold mb-1">บันทึกเรียบร้อย</h4>
+            <p class="text-muted small mb-4">กรุณาถ่ายรูปหน้าจอนี้ไว้เป็นหลักฐาน</p>
+            
+            <div class="text-start p-3 rounded-4 mb-4 border" style="background: #fafafa; font-size: 0.95rem;">
+                <div class="mb-3 pb-2 border-bottom">
+                    <div class="row">
+                        <div class="col-12 mb-1"><span class="text-muted small">ผู้เบิก:</span> <span class="fw-bold" id="finalStaffName"></span></div>
+                        <div class="col-6"><span class="text-muted small">ตำแหน่ง:</span> <span class="fw-bold" id="finalStaffRank"></span></div>
+                        <div class="col-6"><span class="text-muted small">เรือ:</span> <span class="fw-bold" id="finalStaffVessel"></span></div>
+                    </div>
+                </div>
+                <div id="finalGearItems"></div>
+            </div>
+            
+            <button class="btn btn-outline-secondary w-100" style="border-radius: 12px; padding: 12px;" onclick="location.reload()">ทำรายการใหม่</button>
+        </div>
     </div>
-
-  </div>
 </div>
 
 <script>
-  // *** สำคัญ: ต้องใช้ URL ล่าสุดจากการ Deploy เป็น "New Version" เท่านั้น ***
-  const API_URL = "https://script.google.com/macros/s/AKfycbzNT9xSWH_AFY2Fqe6HTde89-BIOmDsS_M18CEqOW3m9EPZeWjKS9L1SEDECvLHDc7FdA/exec"; 
+    const API_URL = "https://script.google.com/macros/s/AKfycby-HYmb_FuRONlgKqrswugZbiCnBLDu99M49Jxn3YNOsNPQQeB5RijAfqUSe8VOxIXRwQ/exec"; 
+    let currentStaff = {}, cachedInitData = null, selectedRankForGear = "", gearItems = [], finalSelected = [];
 
-  let crew = {};
-  let itemsData = [];
-  const shoeMap = { "4":"38", "5":"39", "6":"40", "7":"41", "8":"42", "9":"43", "10":"44", "11":"45", "12":"46" };
-
-  window.onload = async () => {
-    const ranks = await apiFetch({action: 'getRanks'});
-    const sel = document.getElementById('rankSelector');
-    sel.innerHTML = '<option value="">-- เลือกตำแหน่ง --</option>';
-    ranks.forEach(r => sel.innerHTML += `<option value="${r}">${r}</option>`);
-  };
-
-  async function searchCrew() {
-    const q = document.getElementById('searchInput').value;
-    if(!q) return;
-    const res = await apiFetch({action: 'searchStaff', query: q});
-    let html = '';
-    res.data.forEach(s => {
-      html += `<div class="card p-3 mb-2 shadow-sm border-0" style="cursor:pointer; background:#f1f5f9" onclick="selectCrew('${s.ipn}', '${s.name}')">
-                <div class="fw-bold text-primary">${s.name}</div>
-                <div class="small text-muted">StaffID: ${s.ipn}</div>
-              </div>`;
-    });
-    document.getElementById('staffList').innerHTML = html || 'ไม่พบรายชื่อพนักงาน';
-  }
-
-  function selectCrew(ipn, name) {
-    crew = { ipn, name };
-    document.getElementById('cName').innerText = name;
-    document.getElementById('cIpn').innerText = ipn;
-    switchStep('stepConfirm');
-  }
-
-  async function proceedToItems() {
-    crew.rank = document.getElementById('rankSelector').value;
-    if(!crew.rank) return alert("โปรดเลือกตำแหน่ง");
-    itemsData = await apiFetch({action: 'getItems', rank: crew.rank});
-    renderItems();
-    switchStep('stepItems');
-  }
-
-  function renderItems() {
-    document.getElementById('itemList').innerHTML = itemsData.map((item, i) => {
-      // ปรับให้ Safety Shoes มีลิมิต 2 หน่วยเสมอ
-      let limit = item.name.toLowerCase().includes('shoe') ? 2 : item.limit;
-      return `
-      <div class="item-card shadow-sm" id="box_${i}">
-        <div class="d-flex justify-content-between align-items-center">
-          <div class="fw-bold">${item.name} <br><small class="text-muted">ลิมิต: ${limit} หน่วย</small></div>
-          <div class="qty-box d-flex align-items-center gap-2">
-            <div class="btn-step" onclick="changeQty(${i}, -1, ${limit})">-</div>
-            <div class="qty-val" id="q_${i}">0</div>
-            <div class="btn-step" onclick="changeQty(${i}, 1, ${limit})">+</div>
-          </div>
-        </div>
-        ${item.sizes.length > 0 ? `
-          <select class="form-select mt-2 hidden" id="s_${i}" style="border-radius:10px">
-            <option value="">-- เลือกไซส์ --</option>
-            ${item.sizes.map(s => `<option value="${s}">Size ${s} / EU ${shoeMap[s] || '-'}</option>`).join('')}
-          </select>` : ''}
-      </div>`;
-    }).join('');
-  }
-
-  function changeQty(i, delta, limit) {
-    let q = parseInt(document.getElementById('q_'+i).innerText) + delta;
-    if (q < 0) q = 0; if (q > limit) q = limit;
-    document.getElementById('q_'+i).innerText = q;
-    const box = document.getElementById('box_'+i);
-    const sz = document.getElementById('s_'+i);
-    if(q > 0) {
-      box.classList.add('has-val');
-      if(sz) sz.classList.remove('hidden');
-    } else {
-      box.classList.remove('has-val');
-      if(sz) { sz.classList.add('hidden'); sz.value = ""; }
+    function apiCall(action, params, callbackFn) {
+        const cbName = 'jsonp_' + Date.now();
+        window[cbName] = (data) => { callbackFn(data); delete window[cbName]; document.getElementById(cbName).remove(); };
+        const script = document.createElement('script'); script.id = cbName;
+        const url = new URL(API_URL); url.searchParams.append('action', action); url.searchParams.append('callback', cbName);
+        for (let k in params) url.searchParams.append(k, params[k]);
+        script.src = url.toString(); document.body.appendChild(script);
     }
-  }
 
-  function goToSummary() {
-    let sel = []; let err = false;
-    itemsData.forEach((item, i) => {
-      const q = parseInt(document.getElementById('q_'+i).innerText);
-      if(q > 0) {
-        const szVal = document.getElementById('s_'+i) ? document.getElementById('s_'+i).value : "";
-        if(document.getElementById('s_'+i) && !szVal) {
-          document.getElementById('box_'+i).style.borderColor = 'red'; err = true;
+    function searchCrew() {
+        const q = document.getElementById('searchInp').value;
+        if(!q) return;
+        document.getElementById('staffList').innerHTML = '<p class="text-center p-3">กำลังค้นหา...</p>';
+        apiCall('getStaff', {query: q}, (data) => {
+            let html = '';
+            data.forEach(s => {
+                html += `<div class="card-main mb-2 p-3 border-start border-4 border-primary" onclick='selectStaff(${JSON.stringify(s)})' style="cursor:pointer;">
+                            <div class="fw-bold text-primary">${s.name}</div><small class="text-muted">ID: ${s.ipn}</small>
+                         </div>`;
+            });
+            document.getElementById('staffList').innerHTML = html || '<p class="text-center">ไม่พบข้อมูลพนักงาน</p>';
+        });
+    }
+
+    function selectStaff(staff) {
+        currentStaff = staff;
+        document.getElementById('dispName').innerText = staff.name;
+        document.getElementById('dispIpn').innerText = "ID: " + staff.ipn;
+        showStep('step2');
+        if (!cachedInitData) {
+            apiCall('getInitData', {}, (data) => { cachedInitData = data; renderSelects(data); });
+        } else { renderSelects(cachedInitData); }
+    }
+
+    function renderSelects(data) {
+        const vSel = document.getElementById('vesselSelect'), rSel = document.getElementById('rankSelect');
+        vSel.innerHTML = '<option value="">-- เลือกเรือ --</option>';
+        data.vessels.forEach(v => vSel.innerHTML += `<option value="${v}">${v}</option>`);
+        rSel.innerHTML = '<option value="">-- เลือกตำแหน่ง --</option>';
+        data.ranks.forEach(r => rSel.innerHTML += `<option value="${r}">${r}</option>`);
+    }
+
+    function checkDutyNeeded() {
+        const rank = document.getElementById('rankSelect').value;
+        const dutyArea = document.getElementById('dutyArea'), dutyButtons = document.getElementById('dutyButtons');
+        dutyButtons.innerHTML = '';
+        if (rank === "OS" || rank === "WPR") {
+            dutyArea.classList.remove('hidden'); selectedRankForGear = "";
+            [rank, "MSM"].forEach(d => {
+                dutyButtons.innerHTML += `<input type="radio" class="btn-check" name="dutyOpt" id="d_${d}" onchange="selectedRankForGear='${d}'">
+                                         <label class="btn btn-outline-primary p-2" for="d_${d}">${d}</label>`;
+            });
+        } else { dutyArea.classList.add('hidden'); selectedRankForGear = rank; }
+    }
+
+    function validateStep2() {
+        const v = document.getElementById('vesselSelect').value, r = document.getElementById('rankSelect').value;
+        if(!v || !r) return alert("กรุณาเลือกเรือและตำแหน่ง");
+        if((r === "OS" || r === "WPR") && !selectedRankForGear) return alert("กรุณาระบุหน้าที่ (Duty Rank)");
+        currentStaff.vessel = v; currentStaff.rank = selectedRankForGear;
+        showStep('step3'); loadGearItems(selectedRankForGear);
+    }
+
+    function loadGearItems(rank) {
+        const listDiv = document.getElementById('gearList');
+        listDiv.innerHTML = '<p class="text-center p-4">กำลังโหลดรายการอุปกรณ์...</p>';
+        apiCall('getItems', {rank: rank}, (items) => {
+            gearItems = items;
+            let html = '';
+            items.forEach((item, i) => {
+                const hasSizes = item.sizes && item.sizes.length > 0;
+                html += `
+                <div class="item-card shadow-sm" id="card_${i}">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="fw-bold" style="font-size:1.1rem">${item.name}</span>
+                        <span class="badge bg-light text-muted fw-normal border">จำกัด ${item.limit}</span>
+                    </div>
+                    <div class="row g-2 align-items-center">
+                        <div class="col-5">
+                            <label class="small text-muted mb-1 d-block">จำนวนเบิก</label>
+                            <div class="qty-controller">
+                                <button class="btn-qty" onclick="changeQty(${i}, -1)">-</button>
+                                <span class="qty-display" id="q_${i}">0</span>
+                                <button class="btn-qty" onclick="changeQty(${i}, 1)">+</button>
+                            </div>
+                        </div>
+                        <div class="col-7 ${hasSizes ? '' : 'hidden'}">
+                            <label class="small text-muted mb-1 d-block">ขนาด (Size)</label>
+                            <select id="s_${i}" class="form-select" style="border-radius:10px;" disabled>
+                                <option value="">เลือกไซส์</option>
+                                ${item.sizes.map(sz => `<option value="${sz}">${sz}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            listDiv.innerHTML = html;
+        });
+    }
+
+    function changeQty(index, delta) {
+        const display = document.getElementById('q_' + index);
+        const select = document.getElementById('s_' + index);
+        const card = document.getElementById('card_' + index);
+        const limit = gearItems[index].limit;
+        let currentQty = parseInt(display.innerText);
+        let newQty = currentQty + delta;
+        if (newQty < 0) newQty = 0;
+        if (newQty > limit) newQty = limit;
+        display.innerText = newQty;
+        if (newQty > 0) {
+            card.classList.add('active');
+            if (select) select.disabled = false;
         } else {
-          document.getElementById('box_'+i).style.borderColor = '';
-          const szLabel = szVal ? `Size ${szVal} / EU ${shoeMap[szVal]}` : "-";
-          sel.push({ itemName: item.name, qty: q, size: szLabel });
+            card.classList.remove('active');
+            if (select) { select.disabled = true; select.value = ""; }
         }
-      }
-    });
-    if(err) return alert("กรุณาเลือกไซส์ของอุปกรณ์ที่ต้องการ");
-    
-    crew.selected = sel;
-    document.getElementById('sName').innerText = crew.name;
-    document.getElementById('sInfo').innerText = `StaffID: ${crew.ipn} | Position: ${crew.rank}`;
-    document.getElementById('summaryContent').innerHTML = sel.map(s => `
-      <div class="mb-2 p-2 bg-white border rounded">
-        <b>• ${s.itemName}</b><br>
-        <span class="small text-muted">จำนวน: ${s.qty} หน่วย | ไซส์: ${s.size}</span>
-      </div>`).join('') || '<div class="text-danger">ไม่เลือกรับอุปกรณ์</div>';
-    switchStep('stepSummary');
-  }
+    }
 
-  async function confirmSubmit() {
-    const btn = document.getElementById('btnSubmit');
-    btn.disabled = true; btn.innerText = "กำลังบันทึกข้อมูล...";
-    try {
-      await fetch(API_URL, {
-        method: 'POST', mode: 'no-cors',
-        body: JSON.stringify({ ipn: crew.ipn, name: crew.name, rank: crew.rank, items: crew.selected })
-      });
-      switchStep('stepSuccess');
-    } catch(e) { alert("เกิดข้อผิดพลาดในการบันทึก"); btn.disabled = false; }
-  }
+    function prepareReview() {
+        finalSelected = [];
+        let errorSize = false;
+        gearItems.forEach((item, i) => {
+            const q = parseInt(document.getElementById('q_' + i).innerText);
+            const s = document.getElementById('s_' + i) ? document.getElementById('s_' + i).value : "";
+            if(q > 0) {
+                if(!s && item.sizes.length > 0) errorSize = true;
+                let displayText = item.name;
+                if(s && s !== "-") displayText += ` Size ${s}`;
+                finalSelected.push({ itemName: item.name, display: displayText, qty: q, size: s || "-" });
+            }
+        });
+        if(errorSize) return alert("กรุณาเลือกไซส์ของอุปกรณ์ที่คุณเลือก");
+        if(finalSelected.length === 0) { if(!confirm("ยังไม่ได้เลือกอุปกรณ์ ยืนยันว่าไม่รับของใช่หรือไม่?")) return; }
 
-  function apiFetch(p) {
-    return new Promise(res => {
-      const cb = 'callback_' + Math.round(1000000 * Math.random());
-      window[cb] = (d) => { res(d); delete window[cb]; };
-      const s = document.createElement('script');
-      s.src = API_URL + "?" + new URLSearchParams({...p, callback: cb});
-      document.body.appendChild(s);
-    });
-  }
+        document.getElementById('revName').innerText = currentStaff.name;
+        document.getElementById('revRank').innerText = currentStaff.rank;
+        document.getElementById('revVessel').innerText = currentStaff.vessel;
+        
+        let itemsHtml = '';
+        if(finalSelected.length > 0) {
+            finalSelected.forEach(it => {
+                itemsHtml += `
+                    <div class="list-summary-item">
+                        <div class="rev-item-text">${it.display}</div>
+                        <div class="badge-qty">จำนวน ${it.qty} ชิ้น</div>
+                    </div>`;
+            });
+        } else {
+            // ปรับปรุง: แสดงข้อความไม่รับของในหน้าตรวจสอบ
+            itemsHtml = `<div class="no-item-alert my-3">⚠️ ไม่ต้องการรับอุปกรณ์</div>`;
+        }
+        document.getElementById('revItems').innerHTML = itemsHtml;
+        showStep('step4');
+    }
 
-  function switchStep(id) {
-    ['step1', 'stepConfirm', 'stepItems', 'stepSummary', 'stepSuccess'].forEach(s => document.getElementById(s).classList.add('hidden'));
-    document.getElementById(id).classList.remove('hidden');
-    window.scrollTo(0,0);
-  }
+    async function submitData() {
+        const btn = document.getElementById('btnSubmit');
+        btn.disabled = true; btn.innerText = "กำลังบันทึกข้อมูล...";
+        
+        await fetch(API_URL, {
+            method: 'POST', mode: 'no-cors',
+            body: JSON.stringify({
+                ipn: currentStaff.ipn, name: currentStaff.name,
+                rank: currentStaff.rank, vessel: currentStaff.vessel,
+                items: finalSelected
+            })
+        });
+
+        document.getElementById('finalStaffName').innerText = currentStaff.name;
+        document.getElementById('finalStaffRank').innerText = currentStaff.rank;
+        document.getElementById('finalStaffVessel').innerText = currentStaff.vessel;
+
+        let finalHtml = ``;
+        if(finalSelected.length > 0) {
+            finalHtml = `<div class="small fw-bold text-success mb-2">รายการอุปกรณ์ที่เบิก:</div>`;
+            finalSelected.forEach(it => { finalHtml += `<div class="mb-2">✅ ${it.display} <br><span class="text-muted small">จำนวน ${it.qty} ชิ้น</span></div>`; });
+        } else {
+            // ปรับปรุง: แสดงข้อความไม่รับของในหน้าสรุปสุดท้าย
+            finalHtml = `<div class="no-item-alert">ไม่ต้องการรับอุปกรณ์</div>`;
+        }
+        document.getElementById('finalGearItems').innerHTML = finalHtml;
+        
+        showStep('step5');
+    }
+
+    function showStep(id) {
+        ['step1', 'step2', 'step3', 'step4', 'step5'].forEach(s => document.getElementById(s).classList.add('hidden'));
+        document.getElementById(id).classList.remove('hidden'); window.scrollTo(0,0);
+    }
 </script>
 </body>
 </html>
